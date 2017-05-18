@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+    <style>
+        html {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        #red-box {
+            /*500px 500px*/
+            width: 496px;
+            height: 496px;
+            background-color: red;
+            border: 2px solid black;
+        }
+
+        #green-box {
+            /*50px 50px*/
+            width: 46px;
+            height: 46px;
+            background-color: green;
+            border: 2px solid black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        #green-box:hover {
+            cursor: move;
+            -webkit-filter: brightness(110%);
+        }
+    </style>
+</head>
+<body>
+<div id="red-box">
+    <div id="green-box">
+        <div>0px</div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    (function () {
+        function getPosition(elem) {
+            var x = 0;
+            var y = 0;
+            while (elem && !isNaN(elem.offsetLeft) && !isNaN(elem.offsetTop)) {
+                x += elem.offsetLeft - elem.scrollLeft;
+                y += elem.offsetTop - elem.scrollTop;
+                elem = elem.offsetParent;
+            }
+            return {top: y, left: x}
+        }
+
+        function setDistance(draggable, x1, y1, x2, y2) {
+            var dx = x1 - x2;
+            var dy = y1 - y2;
+            var dist = Math.pow(Math.pow(dx, 2) + Math.pow(dy, 2), .5);
+            //set distance content.
+            draggable.children[0].textContent = Math.round(dist) + 'px';
+        }
+
+        function getCoordinates(coord) {
+            var border = test.border;
+            if (coord.x < border.left) coord.x = border.left;
+            if (coord.x > border.right) coord.x = border.right;
+            if (coord.y < border.top) coord.y = border.top;
+            if (coord.y > border.bottom) coord.y = border.bottom;
+            return coord;
+        }
+
+        /**
+         *
+         * @param draggable
+         * @param container
+         */
+        function setupDraggable(draggable, container) {
+            var test = window.test;
+            var dragging = false;
+
+            function dragHandler(moveEvent) {
+                moveEvent.preventDefault();
+                dragging = true; //FLAG
+                var coordinates = getCoordinates({
+                    x: moveEvent.clientX,
+                    y: moveEvent.clientY
+                });
+                var positions = {
+                    position: 'absolute',
+                    left: coordinates.x - test.elementLength / 2 + 'px',
+                    top: coordinates.y - test.elementLength / 2 + 'px'
+                };
+                //update
+                for (property in positions) {
+                    if (positions.hasOwnProperty(property)) {
+                        draggable.style[property] = positions[property];
+                        console.log(draggable.style[property])
+                    }
+                }
+                setDistance(draggable, coordinates.x, coordinates.y, test.origin.x, test.origin.y);
+            }
+
+            function dropHandler(upEvent) {
+                if (dragging === true) {
+                    upEvent.preventDefault();
+                    container.removeEventListener('mousemove', dragHandler, false);
+                    container.removeEventListener('mouseup', dropHandler, false);
+                    dragging = false;
+                }
+            }
+
+            draggable.addEventListener('mousedown', function dragListener(downEvent) {
+                downEvent.preventDefault();
+                container.addEventListener('mousemove', dragHandler, false);
+                container.addEventListener('mouseup', dropHandler, false);
+            }, false);
+        }
+
+        window.test = {
+            containerLength: 496,
+            elementLength: 46,
+            origin: {x: 0, y: 0},
+            setupDraggable: setupDraggable,
+            getPosition: getPosition
+        }
+    })();
+
+    //init app
+    var test = window.test;
+    var body = document.getElementsByTagName('body')[0];
+    var container = document.getElementById('red-box');
+    var draggable = document.getElementById('green-box');
+    // app properties
+    var containerOffset = test.containerLength / 2;
+    var elementOffset = test.elementLength / 2;
+    test.containerOffset = test.getPosition(container);
+    test.origin.x = test.containerOffset.left + containerOffset;
+    test.origin.y = test.containerOffset.top + containerOffset;
+    test.border = {
+        top: test.origin.y - containerOffset + elementOffset,
+        right: test.origin.x + containerOffset - elementOffset,
+        bottom: test.origin.y + containerOffset - elementOffset,
+        left: test.origin.x - containerOffset + elementOffset,
+    };
+    test.setupDraggable(draggable, body);
+    // init position
+    var startPosition = {
+        position: 'absolute',
+        left: test.origin.x - elementOffset + "px",
+        top: test.origin.y - elementOffset + "px"
+    };
+    for (var property in startPosition) {
+        if (startPosition.hasOwnProperty(property)) {
+            draggable.style[property] = startPosition[property];
+        }
+    }
+</script>
+</body>
+</html>
